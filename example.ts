@@ -1,3 +1,4 @@
+import * as sm from '@shumai/shumai'
 import { Image } from '@shumai/image'
 
 let img = new Image('input.png')

@@ -75,13 +75,15 @@ export class Image {
   constructor(obj) {
     if (typeof(obj) === 'string') {
       this.img_ptr = symbols.vips_image_new_from_file(Buffer.from(obj, 'utf-8'))
+      if (this.img_ptr === null) {
+        throw `Unable to open file: ${obj}`
+      }
     } else if (obj.constructor === sm.Tensor) {
       if (obj.ndim != 3) {
         throw `Expected tensor of rank 3, was given one of rank ${obj.ndim}`
       }
       // TODO this may need to be saved
       const memory = obj.toUint8Array()
-      console.log(obj.shape)
       this.img_ptr = symbols.vips_image_new_from_memory(memory, memory.length, obj.shape[0], obj.shape[1], obj.shape[2], 1)
     } else {
       this.img_ptr = obj
@@ -94,7 +96,6 @@ export class Image {
     const size = new BigInt64Array(1);
     const memory = symbols.vips_image_write_to_memory(this.img_ptr, size)
     const buffer = new Uint8Array(toArrayBuffer(memory, 0, Number(size[0])))
-    console.log(this)
     const t = sm.tensor(buffer).reshape([this.width, this.height, this.channel])
     symbols.g_free(ptr(buffer))
     return t
