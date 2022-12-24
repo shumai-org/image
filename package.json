@@ -1,0 +1,22 @@
+{
+  "name": "@shumai/image",
+  "version": "0.0.1",
+  "module": "image/index.ts",
+  "type": "module",
+  "files": [
+    "image/**/*.ts"
+  ],
+  "keywords": [
+    "bun",
+    "libvips",
+    "image",
+    "tensor",
+    "array",
+    "machine",
+    "learning",
+    "ai"
+  ],
+  "dependencies": {
+    "@shumai/shumai": "^0.0.12-1"
+  }
+}
