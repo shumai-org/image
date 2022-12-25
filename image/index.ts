@@ -1,141 +1,75 @@
-import { ptr, read, toArrayBuffer, dlopen, FFIType, suffix } from "bun:ffi";
-import { spawn } from "bun";
+import { toArrayBuffer } from "bun:ffi";
+import { load } from './load'
 import * as sm from '@shumai/shumai';
 
-const { stdout } = spawn(['brew', '--prefix', 'libvips'])
-const brew_path = (await new Response(stdout).text()).trim()
-const libvips_path = `${brew_path}/lib/libvips.${suffix}`;
+const vips = await load();
 
-const { symbols } = dlopen(libvips_path, {
-  vips_image_new_from_memory: {
-    args: [FFIType.ptr, FFIType.u64, FFIType.i32, FFIType.i32, FFIType.i32, FFIType.i32],
-    returns: FFIType.ptr,
-  },
-  vips_image_new_from_file: {
-    args: [FFIType.cstring],
-    returns: FFIType.ptr,
-  },
-  vips_image_get_width: {
-    args: [FFIType.ptr],
-    returns: FFIType.i32,
-  },
-  vips_image_get_height: {
-    args: [FFIType.ptr],
-    returns: FFIType.i32,
-  },
-  vips_image_get_bands: {
-    args: [FFIType.ptr],
-    returns: FFIType.i32,
-  },
-  vips_image_write_to_memory: {
-    args: [FFIType.ptr, FFIType.ptr],
-    returns: FFIType.ptr,
-  },
-  vips_image_write_to_file: {
-    args: [FFIType.ptr, FFIType.cstring],
-    returns: FFIType.i32,
-  },
-  vips_rotate: {
-    args: [FFIType.ptr, FFIType.ptr, FFIType.f64],
-    returns: FFIType.i32,
-  },
-  vips_resize: {
-      args: [FFIType.ptr, FFIType.ptr, FFIType.f64],
-      returns: FFIType.i32,
-  },
-  vips_gaussblur: {
-      args: [FFIType.ptr, FFIType.ptr, FFIType.f64],
-      returns: FFIType.i32,
-  },
-  vips_sharpen: {
-      args: [FFIType.ptr, FFIType.ptr, FFIType.f64],
-      returns: FFIType.i32,
-  },
-  vips_sobel: {
-      args: [FFIType.ptr, FFIType.ptr],
-      returns: FFIType.i32,
-  },
-  vips_canny: {
-      args: [FFIType.ptr, FFIType.ptr],
-      returns: FFIType.i32,
-  },
-  vips_invert: {
-      args: [FFIType.ptr, FFIType.ptr],
-      returns: FFIType.i32,
-  },
-  g_free: {
-    args: [FFIType.ptr],
-  },
-  g_object_unref: {
-    args: [FFIType.ptr],
-  },
-});
+function stringToNullTerminated(str) {
+  const b = new TextEncoder().encode(str)
+  const null_term_b = new Uint8Array(str.length + 1)
+  null_term_b.set(b)
+  return null_term_b
+}
 
 export class Image {
   constructor(obj) {
     if (typeof(obj) === 'string') {
-      this.img_ptr = symbols.vips_image_new_from_file(Buffer.from(obj, 'utf-8'))
+      this.filename = stringToNullTerminated(obj)
+      this.img_ptr = vips.from_file(this.filename)
       if (this.img_ptr === null) {
-        throw `Unable to open file: ${obj}`
+        const error = vips.error();
+        vips.clear_error()
+        throw `Error in libvips: ${error}`
       }
     } else if (obj.constructor === sm.Tensor) {
       if (obj.ndim != 3) {
         throw `Expected tensor of rank 3, was given one of rank ${obj.ndim}`
       }
       // TODO this may need to be saved
-      const memory = obj.toUint8Array()
-      this.img_ptr = symbols.vips_image_new_from_memory(memory, memory.length, obj.shape[0], obj.shape[1], obj.shape[2], 1)
-    } else {
+      this.memory = obj.toUint8Array()
+      this.img_ptr = vips.from_memory(this.memory, this.memory.length, obj.shape[0], obj.shape[1], obj.shape[2])
+    } else if (typeof(obj) === 'number') {
+      if (obj == 0) {
+        throw `Invalid input, passed ${obj} as image pointer`
+      }
       this.img_ptr = obj
+    } else {
+      throw `Invalid input: ${obj}`
     }
-    this.height = symbols.vips_image_get_height(this.img_ptr)
-    this.width = symbols.vips_image_get_width(this.img_ptr)
-    this.channel = symbols.vips_image_get_bands(this.img_ptr)
+    this.height = vips.get_height(this.img_ptr)
+    this.width = vips.get_width(this.img_ptr)
+    this.channels = vips.get_bands(this.img_ptr)
   }
   tensor() {
     const size = new BigInt64Array(1);
-    const memory = symbols.vips_image_write_to_memory(this.img_ptr, size)
+    const memory = vips.to_memory(this.img_ptr, size)
     const buffer = new Uint8Array(toArrayBuffer(memory, 0, Number(size[0])))
-    const t = sm.tensor(buffer).reshape([this.width, this.height, this.channel])
-    symbols.g_free(ptr(buffer))
+    const t = sm.tensor(buffer).reshape([this.width, this.height, this.channels])
+    vips.free_memory(buffer)
     return t
   }
   save(filename) {
-    symbols.vips_image_write_to_file(this.img_ptr, Buffer.from(filename, 'utf-8'))
+    vips.to_file(this.img_ptr, stringToNullTerminated(filename))
   }
   rotate(deg) {
-    const buff = new Float64Array(1)
-    symbols.vips_rotate(this.img_ptr, buff, deg)
-    return new Image(read.ptr(ptr(buff)))
+    return new Image(vips.rotate(this.img_ptr, deg))
   }
   resize(scale) {
-    const buff = new Float64Array(1)
-    symbols.vips_resize(this.img_ptr, buff, scale)
-    return new Image(read.ptr(ptr(buff)))
+    return new Image(vips.resize(this.img_ptr, scale))
   }
   gaussblur(sigma) {
-    const buff = new Float64Array(1)
-    symbols.vips_gaussblur(this.img_ptr, buff, sigma)
-    return new Image(read.ptr(ptr(buff)))
+    return new Image(vips.gaussblur(this.img_ptr, sigma))
   }
   sharpen(sigma) {
-    const buff = new Float64Array(1)
-    symbols.vips_sharpen(this.img_ptr, buff, sigma)
-    return new Image(read.ptr(ptr(buff)))
+    return new Image(vips.sharpen(this.img_ptr))
   }
   sobel() {
-    const buff = new Float64Array(1)
-    symbols.vips_sobel(this.img_ptr, buff)
-    return new Image(read.ptr(ptr(buff)))
+    return new Image(vips.sobel(this.img_ptr))
   }
   canny() {
-    const buff = new Float64Array(1)
-    symbols.vips_canny(this.img_ptr, buff)
-    return new Image(read.ptr(ptr(buff)))
+    return new Image(vips.canny(this.img_ptr))
   }
   invert() {
-    const buff = new Float64Array(1)
-    symbols.vips_invert(this.img_ptr, buff)
-    return new Image(read.ptr(ptr(buff)))
+    return new Image(vips.invert(this.img_ptr))
   }
 }

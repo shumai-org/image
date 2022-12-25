@@ -1,10 +1,11 @@
 {
   "name": "@shumai/image",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "module": "image/index.ts",
   "type": "module",
   "files": [
-    "image/**/*.ts"
+    "image/**/*.ts",
+    "image/binding.c"
   ],
   "keywords": [
     "bun",
