@@ -1,13 +1,13 @@
-import * as sm from '@shumai/shumai'
-import { Image } from './image'
+import * as sm from "@shumai/shumai";
+import { Image } from "./image";
 
 for (let i = 0; i < 1000; ++i) {
-  let img = new Image('input.png')
-  img = img.resize(2).rotate(2).gaussblur(2).sharpen()
-  let t = img.tensor()
-  t = t.div(sm.scalar(2)).add(sm.scalar(40))
-  img = new Image(t)
-  img.save('output.jpg')
+  let img = new Image("input.png");
+  img = img.resize(2).rotate(2).gaussblur(2).sharpen();
+  let t = img.tensor();
+  t = t.div(sm.scalar(2)).add(sm.scalar(40));
+  img = new Image(t);
+  img.save("output.jpg");
 }
 //for (let i = 0; i < 1000; ++i) {
 //  let img = new Image('input.png')
@@ -17,4 +17,3 @@ for (let i = 0; i < 1000; ++i) {
 //  img = new Image(t)
 //  img.save('output.jpg')
 //}
-
