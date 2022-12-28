@@ -45,6 +45,7 @@ export class Image {
     this.height = vips.get_height(this.img_ptr);
     this.width = vips.get_width(this.img_ptr);
     this.channels = vips.get_bands(this.img_ptr);
+    this._underlying = toArrayBuffer(this.img_ptr, 0, this.height * this.width * this.channels, vips.get_unref())
   }
   tensor() {
     const size = new BigInt64Array(1);

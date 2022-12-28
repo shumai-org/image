@@ -19,6 +19,16 @@ void *to_memory(VipsImage *in, size_t *size) {
 
 void free_memory(void *d) { g_free(d); }
 
+void unref(void* ptr, void* /*ignore*/) {
+  g_object_unref((VipsImage*)ptr);
+}
+
+typedef void (*JSTypedArrayBytesDeallocator)(void* bytes,
+                                             void* deallocatorContext);
+JSTypedArrayBytesDeallocator get_unref() {
+  return unref;
+}
+
 int get_height(VipsImage *img) { return vips_image_get_height(img); }
 int get_width(VipsImage *img) { return vips_image_get_width(img); }
 int get_bands(VipsImage *img) { return vips_image_get_bands(img); }

@@ -24,6 +24,9 @@ function load_symbols(binding_path) {
     free_memory: {
       args: [FFIType.ptr],
     },
+    get_unref: {
+      returns: FFIType.ptr,
+    },
     error: {
       return: FFIType.cstring
     },
@@ -95,7 +98,7 @@ async function build_darwin(dest_path) {
   const libvips_lib = `${libvips_path}/lib/`;
   const glib_lib = `${glib_path}/lib/`;
 
-  const build_cmd = `cc -O2 ${dest_path}/binding.c -I${libvips_include} -I${glib_includes[0]} -I${glib_includes[1]} -L${libvips_lib} -L${glib_lib} -lvips -lglib-2.0 -shared -o ${dest_path}/binding.${suffix}`;
+  const build_cmd = `cc -O2 ${dest_path}/binding.c -I${libvips_include} -I${glib_includes[0]} -I${glib_includes[1]} -L${libvips_lib} -L${glib_lib} -lvips -lglib-2.0 -lgobject-2.0 -shared -o ${dest_path}/binding.${suffix}`;
   await $([build_cmd]);
   return `${dest_path}/binding.${suffix}`;
 }
