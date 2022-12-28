@@ -58,3 +58,19 @@ VipsImage *invert(VipsImage *img) {
   vips_invert(img, &out, NULL);
   return out;
 }
+VipsImage *flatten(VipsImage *img, double r, double g, double b) {
+  VipsImage *out;
+  double array[] = { r, g, b };
+  VipsArrayDouble *vips_array = vips_array_double_newv(3, r, g, b);
+  vips_flatten(img, &out, "background", vips_array, NULL);
+  vips_area_unref(VIPS_AREA(vips_array));
+  return out;
+}
+
+const char *error() {
+  return vips_error_buffer();
+}
+
+void clear_error() {
+  vips_error_clear();
+}

@@ -80,4 +80,11 @@ export class Image {
   invert() {
     return new Image(vips.invert(this.img_ptr));
   }
+  flatten(r, g, b) {
+    const ptr = vips.flatten(this.img_ptr, r, g, b);
+    if (ptr === null) {
+      throw `Cannot flatten image (${this.channels} channels, none are alpha)`
+    }
+    return new Image(ptr);
+  }
 }
