@@ -3,7 +3,7 @@ import { Image } from "./image";
 
 for (let i = 0; i < 10; ++i) {
   let img = new Image("input.png");
-  img = img.resize(2).rotate(2).gaussblur(2).sharpen().flatten(255,255,255);
+  img = img.resize(2).crop(10,10,10,10).rotate(2).gaussblur(2).sharpen().flatten(255,255,255);
   let t = img.tensor();
   t = t.div(sm.scalar(2)).add(sm.scalar(40));
   img = new Image(t);

@@ -19,7 +19,7 @@ void *to_memory(VipsImage *in, size_t *size) {
 
 void free_memory(void *d) { g_free(d); }
 
-void unref(void* ptr, void* /*ignore*/) {
+void unref(void* ptr, void* ignore /*ignore*/) {
   g_object_unref((VipsImage*)ptr);
 }
 
@@ -41,6 +41,11 @@ VipsImage *rotate(VipsImage *img, double angle) {
 VipsImage *resize(VipsImage *img, double scale) {
   VipsImage *out;
   vips_resize(img, &out, scale, NULL);
+  return out;
+}
+VipsImage *crop(VipsImage *img, int left, int top, int width, int height) {
+  VipsImage *out;
+  vips_crop(img, &out, left, top, width, height, NULL);
   return out;
 }
 VipsImage *gaussblur(VipsImage *img, double sigma) {

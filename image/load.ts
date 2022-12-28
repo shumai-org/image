@@ -52,6 +52,10 @@ function load_symbols(binding_path) {
       args: [FFIType.ptr, FFIType.f64],
       returns: FFIType.ptr,
     },
+    crop: {
+      args: [FFIType.ptr, FFIType.i32, FFIType.i32, FFIType.i32, FFIType.i32],
+      returns: FFIType.ptr,
+    },
     gaussblur: {
       args: [FFIType.ptr, FFIType.f64],
       returns: FFIType.ptr,

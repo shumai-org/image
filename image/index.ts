@@ -66,6 +66,9 @@ export class Image {
   resize(scale) {
     return new Image(vips.resize(this.img_ptr, scale));
   }
+  crop(left, top, width, height) {
+    return new Image(vips.crop(this.img_ptr, left, top, width, height));
+  }
   gaussblur(sigma) {
     return new Image(vips.gaussblur(this.img_ptr, sigma));
   }
